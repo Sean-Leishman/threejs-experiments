@@ -99,13 +99,25 @@ function flyTowardsCenter(boid) {
     let centerY = 0;
     let centerZ = 0;
     let numNeighbors = 0;
-  
+    let color = boid.newColor != 0 ? boid.newColor : boid.material.color.getHex();
+    let dist = 0;
+    let color_diff = 0;
+
+
     for (let otherBoid of boids) {
-      if (distance(boid, otherBoid) < visualRange) {
-        centerX += otherBoid.position.x;
-        centerY += otherBoid.position.y;
-        centerZ += otherBoid.position.z;
-        numNeighbors += 1;
+      dist = distance(boid, otherBoid)
+      
+      if (dist < visualRange) {
+        color_diff = otherBoid.material.color.getHex() - boid.material.color.getHex();
+        if (color_diff < 10000){
+          centerX += otherBoid.position.x;
+          centerY += otherBoid.position.y;
+          centerZ += otherBoid.position.z;
+          numNeighbors += 1;
+          //color += diff * (1 - (dist / visualRange))
+          color += color_diff * 0.00001
+        }
+        
       }
     }
   
@@ -118,6 +130,10 @@ function flyTowardsCenter(boid) {
       boid.velocity.y += (centerY - boid.position.y) * centeringFactor;
       boid.velocity.z += (centerZ - boid.position.z) * centeringFactor;
     }
+
+    //boid.material.color.setHex(color);
+    boid.newColor = color;
+    boid.colorUpdate = boid.newColor - boid.material.color.getHex() > 0 ? 5 : -5
   }
 
 // Move away from other boids that are too close to avoid colliding
@@ -127,9 +143,15 @@ function avoidOthers(boid) {
     let moveX = 0;
     let moveY = 0;
     let moveZ = 0;
+
+    let color_diff = 0;
+
     for (let otherBoid of boids) {
       if (otherBoid !== boid) {
         if (distance(boid, otherBoid) < minDistance) {
+          color_diff = otherBoid.material.color.getHex() - boid.material.color.getHex();
+
+          if (color_diff > 10000)
           moveX += boid.position.x - otherBoid.position.x;
           moveY += boid.position.y - otherBoid.position.y;
           moveZ += boid.position.z - otherBoid.position.z;
@@ -151,8 +173,10 @@ function matchVelocity(boid) {
     let avgDY = 0;
     let avgDZ = 0;
     let numNeighbors = 0;
+    let dist = 0;
   
     for (let otherBoid of boids) {
+      
       if (distance(boid, otherBoid) < visualRange) {
         avgDX += otherBoid.velocity.x;
         avgDY += otherBoid.velocity.y;
@@ -206,6 +230,12 @@ function update_boids(scene,input_boids){
         matchVelocity(boid);
         limitSpeed(boid);
         keepWithinBounds(boid);
+
+        boid.position.x = boid.position.x + boid.velocity.x;
+        boid.position.y = boid.position.y + boid.velocity.y;
+        boid.position.z = boid.position.z + boid.velocity.z;
+
+        boid.material.color.setHex(boid.material.color.getHex() + boid.colorUpdate)
         //avoidObstacles(boid);
     }
     //console.log(boids[0].position.x,boids[0].velocity.x)

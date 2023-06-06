@@ -40,13 +40,14 @@ class Boids{
     }
 
     generateBoid(color){
-        console.log(color);
         const material = new THREE.MeshBasicMaterial({color: color});
         const mesh = new THREE.Mesh(this.geometry, material);
 
         mesh.position.set(Math.random() * 300 - 150, Math.random() * 300 - 150, Math.random() * 300 - 150);
         mesh.velocity = new THREE.Vector3(2 * (Math.random() - 0.5), 2 * (Math.random() - 0.5), 2 * (Math.random() - 0.5));
         mesh.name = "boid";
+
+        mesh.colorUpdate = 1;
 
         return mesh;
     }
@@ -55,13 +56,6 @@ class Boids{
         boids_update_helper(this.group, this.group.children.filter((child) => {
             return child.name == "boid" && child.visible;
           }));
-        this.group.children.forEach((child) => {
-            if (child.name === "boid"){
-                child.position.x = child.position.x + child.velocity.x;
-                child.position.y = child.position.y + child.velocity.y;
-                child.position.z = child.position.z + child.velocity.z;
-            }
-        })
         
     }
 }
