@@ -1,18 +1,28 @@
 import { Clock } from "three";
+import { MouseCollider } from "../components/MouseCollider";
 
 class Loop {
-  constructor(camera, scene, renderer,composer) {
+  constructor(camera, scene, renderer,composer,stats,mouseHandler) {
     this.camera = camera;
     this.scene = scene;
     this.renderer = renderer;
     this.composer = composer;
+    this.stats = stats;
+    this.mouseHandler = mouseHandler;
     this.toUpdate = [];
+
+    this.tickArgs = {
+      'mousePosition': this.mouseHandler.getPosition(),
+      'boxMesh': null,
+    }
   }
+
   start() {
     requestAnimationFrame(this.start.bind(this));
     this.tick();
 
     this.render();
+    this.stats.update();
   }
 
   stop() {
@@ -20,14 +30,23 @@ class Loop {
   }
 
   render(){
-    console.log("render");
     this.composer.render();
     //this.renderer.render(this.scene, this.camera);
   }
 
-  tick(){
-    this.toUpdate.forEach(el => el.tick(this.scene));  
+  updateToUpdate(item){
+    this.toUpdate.push(item);
+    if (item instanceof MouseCollider){
+      this.tickArgs.boxMesh = item.getBoxMesh();
+    }
   }
+
+  tick(){
+    this.tickArgs.mousePosition = this.mouseHandler.getPosition();
+    this.toUpdate.forEach(el => el.tick(this.tickArgs));  
+  }
+
+
 }
 
 export { Loop };
