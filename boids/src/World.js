@@ -38,11 +38,11 @@ class World{
         scene.add(boids.getGroup());
         loop.updateToUpdate(boids);
 
-        const mouseCollider = new MouseCollider(camera);
-        scene.add(mouseCollider.getBoxMesh());
-        loop.updateToUpdate(mouseCollider);
+        //const mouseCollider = new MouseCollider(camera);
+        //scene.add(mouseCollider.getBoxMesh());
+        //loop.updateToUpdate(mouseCollider);
 
-        scene.add(mouseCollider.getPlaneMesh());
+        //scene.add(mouseCollider.getPlaneMesh());
     }
 
     render() {

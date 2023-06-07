@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import boids_update_helper from './functions';
 
+let baseCircleRadius = 100;
+
 class Boids{
     constructor(num){
         this.num = Math.floor(num / 25);
@@ -9,9 +11,11 @@ class Boids{
         this.colors = this.generateBallColors(this.num * 10);
 
         this.group.add(this.generateContainment());
+
+        this.segmentLength = (baseCircleRadius * 4) / num
         
         for (let i = 0; i < num; i++){
-            const boid = this.generateBoid(this.geometries[i % this.geometries.length], this.colors[i % this.colors.length]);
+            const boid = this.generateBoid(i, this.geometries[i % this.geometries.length], this.colors[i % this.colors.length]);
             this.group.add(boid);
         }
 
@@ -43,7 +47,7 @@ class Boids{
         return object;
     }
 
-    generateBoid(geometry, color){
+    generateBoid(idx, geometry, color){
         const material = new THREE.MeshBasicMaterial({color: color});
         const mesh = new THREE.Mesh(geometry, material);
 
@@ -53,6 +57,20 @@ class Boids{
 
         mesh.colorUpdate = 1;
 
+        let i = Math.floor( idx / 2 );
+
+        if (idx % 2 == 0){
+            mesh.circlePosition = new THREE.Vector3((this.segmentLength * i) - baseCircleRadius,
+                                                    Math.sqrt(baseCircleRadius ** 2 - ((this.segmentLength * i) - baseCircleRadius) ** 2),
+                                                    0);
+        }
+        else{
+            mesh.circlePosition = new THREE.Vector3((this.segmentLength * i) - baseCircleRadius,
+                                                    - Math.sqrt(baseCircleRadius ** 2 - ((this.segmentLength * i) - baseCircleRadius) ** 2),
+                                                    0);
+        }
+        
+
         return mesh;
     }
 
@@ -60,7 +78,7 @@ class Boids{
         const boxMesh = args.boxMesh;
         boids_update_helper(this.group, this.group.children.filter((child) => {
             return child.name == "boid" && child.visible;
-          }), boxMesh);
+          }), boxMesh, "converge");
         
     }
 }

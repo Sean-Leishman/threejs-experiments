@@ -218,26 +218,50 @@ function avoidMouse(boid, boxMesh){
 
 }
 
-function update_boids(scene,boids, boxMesh){
+let baseCircleRadius = 500;
+let origin = new Vector3(0,0,50);
+
+function convergeBoids(boid){
+
+  if (boid.position.distanceTo(boid.circlePosition) > 10){
+    let vel = boid.circlePosition.clone().sub(boid.position)
+    vel.normalize().multiplyScalar(1.5);
+    boid.velocity.x = vel.x;
+    boid.velocity.y = vel.y;
+    boid.velocity.z = vel.z;
+  }
+  else{
+    //console.log(boid.position);
+    boid.velocity.x = 0;
+    boid.velocity.y = 0;
+    boid.velocity.z = 0;
+  }
+}
+
+function update_boids(scene,boids, boxMesh, mode){
     if (containment_box == null){
       containment_box = scene.children.filter(child => {return child.name == 'Containment Box'})[0];
       avoidance_box = scene.children.filter(child => {return child.name == 'Avoidance Box'})[0];
     }
 
     for (let boid of boids) {
-      if (Math.random() < 0.5) {
-        // Update the velocities according to each rule
-        let otherBoids = boids.filter(otherboid => distance(otherboid, boid) < visualRange)
+      if (mode === "boids"){
+        if (Math.random() < 0.5) {
+          let otherBoids = boids.filter(otherboid => distance(otherboid, boid) < visualRange)
 
-        flyTowardsCenter(boid, otherBoids);
-        avoidOthers(boid, otherBoids);
-        matchVelocity(boid, otherBoids);
-        limitSpeed(boid);
-        keepWithinBounds(boid);
+          flyTowardsCenter(boid, otherBoids);
+          avoidOthers(boid, otherBoids);
+          matchVelocity(boid, otherBoids);
+          limitSpeed(boid);
+          keepWithinBounds(boid);
 
-        if (boxMesh !== null){
-          avoidMouse(boid, boxMesh);
+          if (boxMesh !== null){
+            avoidMouse(boid, boxMesh);
+          }
         }
+      }
+      else if (mode === "converge"){
+        convergeBoids(boid);
       }
         boid.position.x = boid.position.x + boid.velocity.x;
         boid.position.y = boid.position.y + boid.velocity.y;
