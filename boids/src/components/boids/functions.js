@@ -230,8 +230,9 @@ function avoidMouse(boid, boxMesh){
 let baseCircleRadius = 70;
 let origin = new Vector3(0,0,0);
 
-function convergeBoids(boid){
-
+function convergeBoids(boid, color){
+  boid.material.color.setHex(color);
+  boid.setColor = false;
   if (boid.position.distanceTo(boid.circlePosition) > 5 && boid.mode !== "spin"){
     let vel = boid.circlePosition.clone().sub(boid.position)
     vel.normalize().multiplyScalar(1.5);
@@ -267,24 +268,44 @@ function convergeBoids(boid){
 }
 
 const zOffset = new Vector3(0,0)
+let colors = Array.from({length: 100}, (e) => 0xffffff * Math.random());
 
-function explodeBoids(boid){
+function explodeBoids(boid, color){
   const velVec = boid.position.clone().sub(origin);
-  velVec.multiplyScalar(5 * Math.random());
+  velVec.multiplyScalar(2 * Math.random());
   velVec.add(new Vector3(0,0, Math.random() * 10));
 
   boid.velocity.x = velVec.x
   boid.velocity.y = velVec.y
   boid.velocity.z = velVec.z
 
+  if (!boid.setColor || boid.setColor === null){
+    boid.material.color.setHex(color);
+    boid.setColor = true;
+  }
+
   const outOfBounds = keepWithinBounds(boid);
   if (outOfBounds){
+    boid.radius = 70;
+    boid.setColor = false; 
+    boid.mode = "converge"
+    boid.iterations = 0;
     return 'boids';
   }
   return 'explode';
 }
 
 let explodeIterations = 0;
+let convergeIterations = 0;
+
+function reset_boids(boids){
+  for (let boid of boids){
+    boid.radius = 70;
+    boid.setColor = false; 
+    boid.mode = "converge"
+    boid.iterations = 0;
+  }
+}
 
 function update_boids(scene,boids, boxMesh, mode){
     if (containment_box == null){
@@ -294,13 +315,24 @@ function update_boids(scene,boids, boxMesh, mode){
 
     if (mode === "explode"){
       explodeIterations += 1; 
+      convergeIterations = 0;
+    }
+    else if (mode === "converge"){
+      convergeIterations += 1;
+      explodeIterations = 0;
     }
     else{
+      convergeIterations = 0;
       explodeIterations = 0;
     }
 
+
     for (let boid of boids) {
       if (mode === "boids"){
+        boid.radius = 70;
+        boid.setColor = false; 
+        boid.mode = "converge"
+        boid.iterations = 0;
         if (Math.random() < 0.5) {
           let otherBoids = boids.filter(otherboid => distance(otherboid, boid) < visualRange)
 
@@ -314,21 +346,21 @@ function update_boids(scene,boids, boxMesh, mode){
             avoidMouse(boid, boxMesh);
           }
         }
+        boid.material.color.setHex(boid.material.color.getHex() + boid.colorUpdate)
       }
       else if (mode === "converge"){
-        mode = convergeBoids(boid);
+        mode = convergeBoids(boid, colors[Math.floor(convergeIterations / 50)]);
       }
       else if (mode === "explode"){
-        boid.mode = "converge";
         boid.radius = baseCircleRadius;
-        mode = explodeBoids(boid);
+        boid.setColor = false; 
+        boid.mode = "converge"
+        boid.iterations = 0;
+        mode = explodeBoids(boid, Math.random() * 0xffffff);
       }
         boid.position.x = boid.position.x + boid.velocity.x;
         boid.position.y = boid.position.y + boid.velocity.y;
         boid.position.z = boid.position.z + boid.velocity.z;
-
-        boid.material.color.setHex(boid.material.color.getHex() + boid.colorUpdate)
-        
         //avoidObstacles(boid);
     }
 
