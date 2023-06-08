@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import { Sphere, Vector3 } from 'three';
 import boids_update_helper from './functions';
 
-let baseCircleRadius = 100;
+let baseCircleRadius = 70;
+let origin = new Vector3(0,0,0);
 
 class Boids{
     constructor(num){
@@ -12,7 +14,7 @@ class Boids{
 
         this.group.add(this.generateContainment());
 
-        this.segmentLength = (baseCircleRadius * 4) / num
+        this.segmentLength = Math.PI * 2 / num;
         
         for (let i = 0; i < num; i++){
             const boid = this.generateBoid(i, this.geometries[i % this.geometries.length], this.colors[i % this.colors.length]);
@@ -59,16 +61,13 @@ class Boids{
 
         let i = Math.floor( idx / 2 );
 
-        if (idx % 2 == 0){
-            mesh.circlePosition = new THREE.Vector3((this.segmentLength * i) - baseCircleRadius,
-                                                    Math.sqrt(baseCircleRadius ** 2 - ((this.segmentLength * i) - baseCircleRadius) ** 2),
-                                                    0);
-        }
-        else{
-            mesh.circlePosition = new THREE.Vector3((this.segmentLength * i) - baseCircleRadius,
-                                                    - Math.sqrt(baseCircleRadius ** 2 - ((this.segmentLength * i) - baseCircleRadius) ** 2),
-                                                    0);
-        }
+        mesh.circleAngle = idx * this.segmentLength;
+        mesh.radius = baseCircleRadius;
+        mesh.iterations = 0;
+
+        mesh.circlePosition = new THREE.Vector3(baseCircleRadius * Math.cos(mesh.circleAngle),
+                                                baseCircleRadius * Math.sin(mesh.circleAngle),
+                                                0);
         
 
         return mesh;
@@ -76,10 +75,13 @@ class Boids{
 
     tick(args){
         const boxMesh = args.boxMesh;
-        boids_update_helper(this.group, this.group.children.filter((child) => {
+        const mode = args.mode;
+        const newMode = boids_update_helper(this.group, this.group.children.filter((child) => {
             return child.name == "boid" && child.visible;
-          }), boxMesh, "converge");
-        
+          }), boxMesh, mode);
+        if (newMode !== mode && newMode !== null){
+            args.updateMode(newMode);
+        }
     }
 }
 

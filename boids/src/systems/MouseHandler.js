@@ -3,6 +3,7 @@ import { Vector2 } from "three";
 class MouseHandler{
     constructor(){
         this.mouse = new Vector2(0,0);
+        this.clicked = false;
 
         document.addEventListener('mousemove', (e) => {
             e.preventDefault();

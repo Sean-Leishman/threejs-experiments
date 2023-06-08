@@ -39,28 +39,37 @@ function nClosestBoids(boid, n) {
 function keepWithinBounds(boid) {
     const margin = 8;
     const turnFactor = 0.21;
+
+    let modified = false;
     
     let x_edge = containment_box.geometry.parameters.width/2;
     let y_edge = containment_box.geometry.parameters.height/2;
     let z_edge = containment_box.geometry.parameters.depth/2;
     if (boid.position.x < containment_box.position.x-x_edge-margin) {
       boid.velocity.x += turnFactor;
+      modified = true;
     }
     if (boid.position.x > containment_box.position.x+x_edge+margin) {
       boid.velocity.x -= turnFactor
+      modified = true;
     }
     if (boid.position.y < containment_box.position.y-y_edge-margin) {
         boid.velocity.y += turnFactor;
+        modified = true;
     }
     if (boid.position.y > containment_box.position.y+y_edge+margin) {
         boid.velocity.y -= turnFactor;
+        modified = true;
     }
     if (boid.position.z < containment_box.position.z-z_edge-margin) {
         boid.velocity.z += turnFactor;
+        modified = true;
     }
     if (boid.position.z > containment_box.position.z+z_edge+margin) {
         boid.velocity.z -= turnFactor;
+        modified = true;
     }
+    return modified;
   }
 
 function avoidObstacles(boid){
@@ -218,12 +227,12 @@ function avoidMouse(boid, boxMesh){
 
 }
 
-let baseCircleRadius = 500;
-let origin = new Vector3(0,0,50);
+let baseCircleRadius = 70;
+let origin = new Vector3(0,0,0);
 
 function convergeBoids(boid){
 
-  if (boid.position.distanceTo(boid.circlePosition) > 10){
+  if (boid.position.distanceTo(boid.circlePosition) > 5 && boid.mode !== "spin"){
     let vel = boid.circlePosition.clone().sub(boid.position)
     vel.normalize().multiplyScalar(1.5);
     boid.velocity.x = vel.x;
@@ -232,16 +241,62 @@ function convergeBoids(boid){
   }
   else{
     //console.log(boid.position);
+    boid.circleAngle += 2;
     boid.velocity.x = 0;
     boid.velocity.y = 0;
     boid.velocity.z = 0;
+    boid.mode = "spin";
+    boid.iterations += 1;
+
+    if (boid.iterations > 70){
+      boid.radius = Math.max(boid.radius - Math.random() * 10, 10);
+      boid.iterations = 40;
+      if (boid.radius === 10){
+        return 'explode';
+      }
+    }
+    //boid.position.x = baseCircleRadius * Math.cos(boid.circleAngle);
+    //boid.poistion.y = baseCircleRadius * Math.sin(boid.circleAngle);
+    boid.position.set(
+      boid.radius * Math.cos(boid.circleAngle),
+      boid.radius * Math.sin(boid.circleAngle),
+      0
+    )
   }
+  return 'converge';
 }
+
+const zOffset = new Vector3(0,0)
+
+function explodeBoids(boid){
+  const velVec = boid.position.clone().sub(origin);
+  velVec.multiplyScalar(5 * Math.random());
+  velVec.add(new Vector3(0,0, Math.random() * 10));
+
+  boid.velocity.x = velVec.x
+  boid.velocity.y = velVec.y
+  boid.velocity.z = velVec.z
+
+  const outOfBounds = keepWithinBounds(boid);
+  if (outOfBounds){
+    return 'boids';
+  }
+  return 'explode';
+}
+
+let explodeIterations = 0;
 
 function update_boids(scene,boids, boxMesh, mode){
     if (containment_box == null){
       containment_box = scene.children.filter(child => {return child.name == 'Containment Box'})[0];
       avoidance_box = scene.children.filter(child => {return child.name == 'Avoidance Box'})[0];
+    }
+
+    if (mode === "explode"){
+      explodeIterations += 1; 
+    }
+    else{
+      explodeIterations = 0;
     }
 
     for (let boid of boids) {
@@ -261,7 +316,12 @@ function update_boids(scene,boids, boxMesh, mode){
         }
       }
       else if (mode === "converge"){
-        convergeBoids(boid);
+        mode = convergeBoids(boid);
+      }
+      else if (mode === "explode"){
+        boid.mode = "converge";
+        boid.radius = baseCircleRadius;
+        mode = explodeBoids(boid);
       }
         boid.position.x = boid.position.x + boid.velocity.x;
         boid.position.y = boid.position.y + boid.velocity.y;
@@ -271,9 +331,8 @@ function update_boids(scene,boids, boxMesh, mode){
         
         //avoidObstacles(boid);
     }
-    //console.log(boids[0].position.x,boids[0].velocity.x)
-    //console.log(boids[0].position.y,boids[0].velocity.y)
-    //console.log(boids[0].position.z,boids[0].velocity.z)
+
+    return mode;
 }
 
 export default update_boids;

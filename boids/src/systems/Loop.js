@@ -14,7 +14,19 @@ class Loop {
     this.tickArgs = {
       'mousePosition': this.mouseHandler.getPosition(),
       'boxMesh': null,
+      'mode': "boids",
+      'updateMode': this.updateMode.bind(this)
     }
+
+    document.addEventListener('click', this.mouseDown.bind(this))
+  }
+
+  mouseDown(){
+    this.tickArgs.mode = "converge";
+  }
+
+  updateMode(mode){
+    this.tickArgs.mode = mode;
   }
 
   start() {
